@@ -58,7 +58,7 @@ static void MX_USART2_UART_Init(void);
 uint8_t TxData[8];
 uint8_t RxData[32];
 
-uint16_t *Data;
+uint16_t Data[10];
 char string[10];
 int loadcell;
 float dbloadcell;
@@ -67,6 +67,21 @@ float dbloadcell;
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+void SendDatazero()
+{
+		TxData[0] = 0x01; //Slave ad
+		TxData[1] = 0x03; //function hex for read holding the register
+		TxData[2] = 0x00; 
+		TxData[3] =	0x00; // read 40011 	
+		TxData[4] = 0x00;
+		TxData[5] = 0x00; // the number of registers
+		
+		//Calculating CRC 
+		uint16_t crc = crc16(TxData, 6);
+		TxData[6] = crc&0xFF;
+		TxData[7] = (crc>>8)&0xFF;	
+		HAL_UART_Transmit(&huart1, TxData, 8, 1000);
+}
 void SendData()
 {
 		TxData[0] = 0x01; //Slave ad
@@ -86,7 +101,7 @@ void SendData()
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
 {
 	
-  loadcell = RxData[3] << 8 | RxData [4];
+	loadcell = RxData[3] << 8 | RxData [4];
 //	Data[1] = RxData[5] << 8 | RxData [6];
 //	Data[2] = RxData[7] << 8 | RxData [8];	
 //	Data[3] = RxData [0];
@@ -148,12 +163,12 @@ int main(void)
 //		TxData[6] = 0xF5;
 //		TxData[7] = 0xC8;	
 		
-		SendData();
-		HAL_Delay(500);
-		dbloadcell = loadcell /100;
-		
+//		SendData();
+//		HAL_Delay(500);
+//		dbloadcell = loadcell /100;
+//		
 
-		HAL_Delay(200);
+//		HAL_Delay(200);
 		
 		
 //		
@@ -171,8 +186,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+		HAL_UARTEx_ReceiveToIdle_IT(&huart1, RxData, 32);
 		SendData();
-		HAL_Delay(500);
+		HAL_Delay(200);
 //		inttostring();
 		
   }
